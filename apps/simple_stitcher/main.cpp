@@ -5,10 +5,11 @@
 #include "common/PointCloud.h"
 #include "common/Camera.h"
 
-#define POSE( x ) dynamic_cast< std::ostringstream & >((std::ostringstream()<<"pose_"<< x <<".yml")).str()
-#define DEPTH( x ) dynamic_cast< std::ostringstream & >((std::ostringstream()<<"ios_depth_vga_"<< x <<".png")).str()
-#define BGR_IMG( x ) dynamic_cast< std::ostringstream & >((std::ostringstream()<<"ios_image_vga_"<< x <<".png")).str()
-#define PLY( x ) dynamic_cast< std::ostringstream & >((std::ostringstream()<<"pose_"<< x <<".ply")).str()
+#define POSE( x ) ((std::ostringstream()<<"pose_"<< x <<".yml")).str()
+#define POSE_SBA( x ) ((std::ostringstream()<<"pose_sba_"<< x <<".xml")).str()
+#define DEPTH( x ) ((std::ostringstream()<<"ios_depth_vga_"<< x <<".png")).str()
+#define BGR_IMG( x ) ((std::ostringstream()<<"ios_image_vga_"<< x <<".png")).str()
+#define PLY( x ) ((std::ostringstream()<<"pose_"<< x <<".ply")).str()
 
 
 using namespace cstitcher::common;
@@ -35,7 +36,19 @@ int main(int argc, char* argv[]) {
             count++;
         }
         pose = pose * invFirst;
+        pose = pose.inv();
+        
+        cv::Vec3d tr = pose.getT();
+        const float median_scale = 0.19665410692;
+        tr = tr*median_scale;
+        pose.setT(tr);
+        
         std::cout<<pose;
+//
+//        PoseRT pose2;
+//        pose2.load_res(POSE_SBA(s));
+//        std::cout<<pose2;
+        
         cloud.applyPose(pose);
         clouds.push_back(cloud);
         std::cout<<s<<std::endl;

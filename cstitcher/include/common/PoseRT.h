@@ -14,12 +14,14 @@ public:
     ~PoseRT();
 
     void load(const std::string& filename);
+    void load_res(const std::string& filename);
     void setRT(cv::Vec4d quaternion, cv::Vec3d translation);
 
     PoseRT inv();
 
     cv::Matx33d getR() const;
     cv::Vec3d getT() const;
+    void setT(cv::Vec3d t);
     cv::Matx44d getPose() const;
     void setPose(cv::Matx44d pose_);
 protected:

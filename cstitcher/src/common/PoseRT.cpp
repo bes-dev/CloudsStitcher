@@ -17,8 +17,8 @@ PoseRT::PoseRT(cv::Vec4d quaternion, cv::Vec3d translation) {
 PoseRT::~PoseRT(){}
 
 cv::Matx33d PoseRT::convertQuaternionToRotationMatrix(cv::Vec4d quat) {
-    double theta = 2 * acos(quat[3]);
-    cv::Vec3d rvec = cv::Vec3d(quat[0], quat[1], quat[2]);
+    double theta = 2 * acos(quat[0]);
+    cv::Vec3d rvec = cv::Vec3d(quat[1], quat[2], quat[3]);
     double norm = sin(theta / 2);
     if(fabs(norm) > 1e-7){
         rvec *= theta / norm;
@@ -33,6 +33,7 @@ cv::Matx33d PoseRT::convertQuaternionToRotationMatrix(cv::Vec4d quat) {
 void PoseRT::setRT(cv::Vec4d quaternion, cv::Vec3d translation) {
     R = convertQuaternionToRotationMatrix(quaternion);
     t = cv::Mat(translation);
+    t = -R*t;
     buildPose();
 }
 
@@ -54,6 +55,12 @@ cv::Matx33d PoseRT::getR() const {
 cv::Vec3d PoseRT::getT() const {
     return t;
 }
+    
+void PoseRT::setT(cv::Vec3d _t)
+{
+    t = _t;
+    buildPose();
+}
 
 void PoseRT::load(const std::string& filename) {
     cv::FileStorage fs;
@@ -64,6 +71,16 @@ void PoseRT::load(const std::string& filename) {
     cv::Vec4d rvec = cv::Vec4d(rotation);
     cv::Vec3d tvec = cv::Vec3d(translation);
     setRT(rvec, tvec);
+}
+
+void PoseRT::load_res(const std::string& filename) {
+    cv::FileStorage fs;
+    fs.open(filename, cv::FileStorage::READ);
+    cv::Mat poseFile;
+    fs["pose"] >> poseFile;
+    pose = poseFile;
+    
+    setPose(pose);
 }
 
 void PoseRT::setPose(cv::Matx44d pose_) {

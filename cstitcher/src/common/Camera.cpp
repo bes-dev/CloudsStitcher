@@ -15,7 +15,7 @@ void Camera::load(std::string bgrIntrinsicFile, std::string depthIntrinsicFile, 
     CV_Assert(fs.isOpened());
     cv::FileNode fn = fs["camera"];
     fn["K"] >> bgrCamera;
-    fs["D"] >> bgrDistortion;
+    fn["D"] >> bgrDistortion;
     fn["width"] >> bgrSize.width;
     fn["height"] >> bgrSize.height;
     CV_Assert(bgrSize.width != 0 || bgrSize.height != 0);

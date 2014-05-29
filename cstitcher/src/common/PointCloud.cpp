@@ -32,30 +32,55 @@ void PointCloud::open(std::string depthFile, std::string bgrFile, Camera& camera
     bgrFy = camera.bgrCamera.at<double>(1, 1);
     bgrCx = camera.bgrCamera.at<double>(0, 2);
     bgrCy = camera.bgrCamera.at<double>(1, 2);
-
-    for(int y = 0; y < depthImg.rows; y++) {
-        for(int x = 0; x < depthImg.cols; x++) {
-            float z = depthImg.at<float>(cv::Point2i(x, y));
+    
+    cv::Mat zbuffer(depth.size(), CV_32FC2);
+    zbuffer.setTo(cv::Vec2f(-1.0, -1.0));
+    
+    for(int v = 0; v < depthImg.rows; v++) {
+        for(int u = 0; u < depthImg.cols; u++) {
+            float z = depthImg.at<float>(v,u);
             cv::Vec3d p;
             p[2] = z;
-            p[0] = (x - depthCx) *z* (1.0f / depthFx);
-            p[1] = (y - depthCy) *z* (1.0f / depthFy);
-//            p[0] = x * (1.0f / depthFx) - z * depthCx ;
-//            p[1] = y * (1.0f / depthFy) - z * depthCy;
+            p[0] = (u - depthCx) *z* (1.0f / depthFx);
+            p[1] = (v - depthCy) *z* (1.0f / depthFy);
             cv::Vec3d pCamera(p);
             pCamera = camera.extrinsicR * pCamera + camera.extrinsicT;
             if(z > 1e-7) {
-                double u = pCamera[0] * bgrFx + pCamera[2] * bgrCx;
-                double v = pCamera[1] * bgrFy + pCamera[2] * bgrCy;
-                if (u > 0.0 && u < 640.0 && v > 0.0 && v < 480.0){
-//                double u = (pCamera[0] + pCamera[2] * bgrCx) * bgrFx ;
-//                double v = (pCamera[1] + pCamera[2] * bgrCy) * bgrFy;
-                cv::Vec3b color = bgrImg.at<cv::Vec3b>(cv::Point2i(u, v));
-                points.push_back(p);
-                colors.push_back(cv::Vec3i(int(color[0]), int(color[1]), int(color[2])));}
+                double uRGB = pCamera[0] * bgrFx/pCamera[2] + bgrCx;
+                double vRGB = pCamera[1] * bgrFy /pCamera[2] + bgrCy;
+                if (uRGB > 0.0 && uRGB < 640.0 && vRGB > 0.0 && vRGB < 480.0)
+                {
+                    cv::Point2i piRGB(uRGB, vRGB);
+                    cv::Vec3b color = bgrImg.at<cv::Vec3b>(piRGB.y, piRGB.x);
+                    points.push_back(p);
+                    colors.push_back(cv::Vec3i(int(color[0]), int(color[1]), int(color[2])));
+                }
             }
         }
     }
+
+
+//    for(int y = 0; y < depthImg.rows; y++) {
+//        for(int x = 0; x < depthImg.cols; x++) {
+//            float z = depthImg.at<float>(cv::Point2i(x, y));
+//            cv::Vec3d p;
+//            p[2] = z;
+//            p[0] = (x - depthCx) *z* (1.0f / depthFx);
+//            p[1] = (y - depthCy) *z* (1.0f / depthFy);
+//            cv::Vec3d pCamera(p);
+//            pCamera = camera.extrinsicR * pCamera + camera.extrinsicT;
+//            if(z > 1e-7) {
+//                double u = pCamera[0] * bgrFx + pCamera[2] * bgrCx;
+//                double v = pCamera[1] * bgrFy + pCamera[2] * bgrCy;
+//                if (u > 0.0 && u < 640.0 && v > 0.0 && v < 480.0)
+//                {
+//                    cv::Vec3b color = bgrImg.at<cv::Vec3b>(cv::Point2i(u, v));
+//                    points.push_back(p);
+//                    colors.push_back(cv::Vec3i(int(color[0]), int(color[1]), int(color[2])));
+//                }
+//            }
+//        }
+//    }
 }
 
 void PointCloud::save(const std::string& fileName) {
@@ -80,7 +105,9 @@ void PointCloud::save(const std::string& fileName) {
 
 void PointCloud::applyPose(const PoseRT& pose) {
     cv::Matx33d rvec = pose.getR();
+//    rvec = rvec.inv();
     cv::Vec3d tvec = pose.getT();
+//    tvec = tvec*(-1.0);
     for(int i = 0; i < points.size(); i++) {
         points[i] = rvec * points[i] + tvec;
     }
