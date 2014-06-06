@@ -5,16 +5,24 @@
 #include "common/PointCloud.h"
 #include "common/Camera.h"
 
+#if MACOS
 #define POSE( x ) ((std::ostringstream()<<"pose_"<< x <<".yml")).str()
 #define POSE_SBA( x ) ((std::ostringstream()<<"pose_sba_"<< x <<".xml")).str()
 #define DEPTH( x ) ((std::ostringstream()<<"ios_depth_vga_"<< x <<".png")).str()
 #define BGR_IMG( x ) ((std::ostringstream()<<"ios_image_vga_"<< x <<".png")).str()
 #define PLY( x ) ((std::ostringstream()<<"pose_"<< x <<".ply")).str()
+#else
+#define POSE( x ) dynamic_cast< std::ostringstream & >((std::ostringstream()<<"pose_"<< x <<".yml")).str()
+#define POSE_SBA( x ) dynamic_cast< std::ostringstream & >((std::ostringstream()<<"pose_sba_"<< x <<".xml")).str()
+#define DEPTH( x ) dynamic_cast< std::ostringstream & >((std::ostringstream()<<"ios_depth_vga_"<< x <<".png")).str()
+#define BGR_IMG( x ) dynamic_cast< std::ostringstream & >((std::ostringstream()<<"ios_image_vga_"<< x <<".png")).str()
+#define PLY( x ) dynamic_cast< std::ostringstream & >((std::ostringstream()<<"pose_"<< x <<".ply")).str()
+#endif
 
 
 using namespace cstitcher::common;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {   
     Camera camera;
     camera.load("intrinsics_ios_vga.yml", "intrinsics_ss.yml", "extrinsics.yml");
     std::vector<PointCloud> clouds;
